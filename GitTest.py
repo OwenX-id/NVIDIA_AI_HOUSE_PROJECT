@@ -1,0 +1,8 @@
+print("Hello, my name is Owen!")
+print("DOB: August 19 2001!")
+print("Favourite subject: Maths")
+print("Favourite food: salmon teriyaki")
+print(14+15)
+print(100-30)
+print(51*32)
+print(65/10)
