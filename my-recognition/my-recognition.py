@@ -18,3 +18,5 @@ net = jetson_inference.imageNet(opt.network)
 class_idx, confidence = net.Classify(img)
 
 class_desc = net.GetClassDesc(class_idx)
+
+print("image is recognized as "+ str(class_desc) +" (class #"+ str(class_idx) +") with " + str(confidence*100)+"% confidence")
