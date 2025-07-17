@@ -66,6 +66,7 @@ if city_input in socal_df['city_clean'].values:
     median_price_city = city_df['price'].astype(float).median()
     median_price_state = socal_df['price'].astype(float).median()
     location_adjustment = median_price_city - median_price_state
+    location_adjustment *= 0.3
     print(f"Median price in {city_input.title()} county: ${median_price_city:,.0f}")
     print(f"Median price in California: ${median_price_state:,.0f}")
     print(f"Location Adjustment: ${location_adjustment:,.0f}")
