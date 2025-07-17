@@ -45,6 +45,14 @@ index = np.argmax(prediction)
 class_name = class_names[index]
 confidence_score = prediction[0][index]
 
-# Print prediction and confidence score
-print("Class:", class_name[2:], end="")
-print("Confidence Score:", confidence_score)
+# Adjust for California 6-year housing inflation
+inflation_multiplier = 1.504  # 50.4% increase
+adjusted_index = min(int(index * inflation_multiplier), len(class_names) - 1)
+
+# Print prediction and confidence score with inflation-adjusted class
+print("Original Class:", class_name[2:], end="")
+print(" Confidence Score:", confidence_score)
+
+adjusted_class_name = class_names[adjusted_index]
+print("Inflation-Adjusted Class:", adjusted_class_name[2:])
+
