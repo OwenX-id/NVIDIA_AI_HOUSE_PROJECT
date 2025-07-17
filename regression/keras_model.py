@@ -1,21 +1,35 @@
-from keras.models import load_model  # TensorFlow is required for Keras to work
-from PIL import Image, ImageOps  # Install pillow instead of PIL
+from keras.models import load_model
+from PIL import Image, ImageOps
 import numpy as np
 import pandas as pd
+import sys
 
-# Disable scientific notation for clarity
-np.set_printoptions(suppress=True)
+# ---------- CONFIG ----------
 
-# Load the model
 model = load_model("keras_model.h5", compile=False)
-
-# Load the labels
 class_names = open("labels.txt", "r").readlines()
 
-# Create the array of the right shape to feed into the keras model
-data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
+price_ranges = {
+    0: 150_000,   # 100-200k midpoint
+    1: 250_000,   # 200-300k
+    2: 400_000,   # 300-500k
+    3: 625_000,   # 500-750k
+    4: 875_000,   # 750k-1m
+    5: 1_125_000, # 1m-1.25m
+    6: 1_400_000  # 1.25m+
+}
 
-import sys
+inflation_multipliers = {
+    0: 1.60,
+    1: 1.55,
+    2: 1.52,
+    3: 1.48,
+    4: 1.45,
+    5: 1.40,
+    6: 1.35
+}
+
+# ---------- CLI ARGS ----------
 if len(sys.argv) < 3:
     print("Usage: python keras_model.py <image_path> <zip_code>")
     sys.exit(1)
@@ -23,68 +37,67 @@ if len(sys.argv) < 3:
 image_path = sys.argv[1]
 zip_code_input = sys.argv[2]
 
-# Open the provided image
+# ---------- IMAGE PROCESSING ----------
+data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 image = Image.open(image_path).convert("RGB")
-
-# resizing the image to be at least 224x224 and then cropping from the center
-size = (224, 224)
-image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-
-# turn the image into a numpy array
+image = ImageOps.fit(image, (224, 224), Image.Resampling.LANCZOS)
 image_array = np.asarray(image)
-
-# Normalize the image
 normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
-
-# Load the image into the array
 data[0] = normalized_image_array
 
-# Predicts the model
+# ---------- CSV COUNTY & PRICE PROCESSING ----------
+socal_df = pd.read_csv("socal2.csv")
+socal_df.columns = socal_df.columns.str.lower().str.strip()
+
+# Infer likely column names
+zip_col = [col for col in socal_df.columns if 'zip' in col][0]
+county_col = [col for col in socal_df.columns if 'county' in col][0]
+price_col = [col for col in socal_df.columns if 'price' in col][0]
+
+# Ensure types
+socal_df[zip_col] = socal_df[zip_col].astype(str).str[:5]
+
+# Median price for California
+median_ca_price = socal_df[price_col].median()
+
+# Lookup county for input zip
+row = socal_df[socal_df[zip_col] == zip_code_input]
+if row.empty:
+    print(f"Zip code {zip_code_input} not found in dataset.")
+    sys.exit(1)
+county_name = row[county_col].iloc[0]
+
+# Median price for the county
+median_county_price = socal_df[socal_df[county_col] == county_name][price_col].median()
+
+# Compute price difference
+price_delta = median_county_price - median_ca_price
+
+# ---------- KERAS PREDICTION ----------
 prediction = model.predict(data)
-# Get indices of sorted predictions (highest first)
 sorted_indices = np.argsort(prediction[0])[::-1]
 index = sorted_indices[0]
 second_index = sorted_indices[1]
 
-# Retrieve class names and confidence scores
-class_name = class_names[index]
+top_class_name = class_names[index].strip()[2:]
 confidence_score = prediction[0][index]
 
-second_class_name = class_names[second_index]
+second_class_name = class_names[second_index].strip()[2:]
 second_confidence_score = prediction[0][second_index]
 
-# Mapping from index to inflation multiplier
-inflation_multipliers = {
-    0: 1.60,  # 100-200k
-    1: 1.55,  # 200-300k
-    2: 1.52,  # 300-500k
-    3: 1.48,  # 500-750k
-    4: 1.45,  # 750k-1m
-    5: 1.40,  # 1m-1.25m
-    6: 1.35   # 1.25m+
-}
+# ---------- ADJUSTED PRICE ----------
+predicted_price = price_ranges.get(index, 400_000)
+adjusted_price = predicted_price + price_delta
 
-# Retrieve appropriate multiplier for predicted class
-multiplier = inflation_multipliers.get(index, 1.50)  # default if out of mapping
+# Inflation adjustment
+inflation_multiplier = inflation_multipliers.get(index, 1.5)
+inflation_adjusted_price = adjusted_price * inflation_multiplier
 
-# Estimate adjusted price class
-adjusted_price = (index + 1) * multiplier  # simple inflation estimate
-adjusted_index = min(int(adjusted_price) - 1, len(class_names) - 1)
-
-adjusted_class_name = class_names[adjusted_index]
-# Local CSV mapping
-zip_to_county_df = pd.read_csv("california-zip-codes.pdf", dtype=str)
-zip_to_county_df.columns = zip_to_county_df.columns.str.lower().str.strip()
-
-# Create a zip->county mapping dictionary
-zip_to_county_map = pd.Series(zip_to_county_df['county'].values, index=zip_to_county_df['zip']).to_dict()
-
-def get_county(zip_code):
-    return zip_to_county_map.get(str(zip_code).zfill(5), None)
-
-test_county = get_county(zip_code_input)
-
-# Print final predictions
-print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
-print("Second Class:", second_class_name[2:].strip(), "| Confidence Score:", second_confidence_score)
-print("Inflation-Adjusted Class:", adjusted_class_name[2:].strip())
+# ---------- OUTPUT ----------
+print(f"Top Class: {top_class_name} | Confidence: {confidence_score:.4f}")
+print(f"Second Class: {second_class_name} | Confidence: {second_confidence_score:.4f}")
+print(f"Predicted Price Midpoint: ${predicted_price:,.0f}")
+print(f"Median County Price: ${median_county_price:,.0f}")
+print(f"Median California Price: ${median_ca_price:,.0f}")
+print(f"Adjusted Price (with county delta): ${adjusted_price:,.0f}")
+print(f"Inflation Adjusted Price: ${inflation_adjusted_price:,.0f}")
