@@ -4,22 +4,21 @@ import numpy as np
 import pandas as pd
 import sys
 
-# Disable scientific notation
 np.set_printoptions(suppress=True)
 
-# Load the model
 model = load_model("keras_model.h5", compile=False)
-
-# Load the labels
 class_names = open("labels.txt", "r").readlines()
 
-# Input handling
-if len(sys.argv) < 3:
-    print("Usage: python keras_model.py <image_path> <city>")
+# Input validation
+if len(sys.argv) < 6:
+    print("Usage: python keras_model.py <image_path> <city> <bedrooms> <bathrooms> <sqft>")
     sys.exit(1)
 
 image_path = sys.argv[1]
 city_input = sys.argv[2].strip().lower()
+bedrooms_input = float(sys.argv[3])
+bathrooms_input = float(sys.argv[4])
+sqft_input = float(sys.argv[5])
 
 # Process image
 image = Image.open(image_path).convert("RGB")
@@ -40,7 +39,6 @@ confidence_score = prediction[0][index]
 second_class_name = class_names[second_index].strip()
 second_confidence_score = prediction[0][second_index]
 
-# Inflation multipliers
 inflation_multipliers = {
     0: 1.60,
     1: 1.55,
@@ -57,14 +55,9 @@ adjusted_class_name = class_names[adjusted_index].strip()
 
 # Load socal data
 socal_df = pd.read_csv("socal2.csv")
-
-# Ensure consistent case for city matching
 socal_df['citi'] = socal_df['citi'].astype(str).str.strip().str.lower()
 
-# Median price calculations
 median_price_state = socal_df['price'].median()
-
-# Filter for the input city
 city_df = socal_df[socal_df['citi'] == city_input]
 
 if not city_df.empty:
@@ -75,39 +68,25 @@ else:
     location_adjustment = 0
     print(f"City '{city_input}' not found in dataset. No location adjustment applied.")
 
-# ------------------------------------
-# ADJUSTMENT CONTROL: Adjustment weights
+# ADJUSTMENT CONTROL
 SQFT_WEIGHT = 0.5
 BEDROOM_WEIGHT = 0.25
 BATHROOM_WEIGHT = 0.25
-# ------------------------------------
 
-# Compute state and city medians for sqft, bedrooms, bathrooms
 median_sqft_state = socal_df['sqft'].median()
 median_bed_state = socal_df['bed'].median()
 median_bath_state = socal_df['bath'].median()
 
-if not city_df.empty:
-    median_sqft_city = city_df['sqft'].median()
-    median_bed_city = city_df['bed'].median()
-    median_bath_city = city_df['bath'].median()
+sqft_adjustment = (sqft_input - median_sqft_state) * SQFT_WEIGHT
+bedroom_adjustment = (bedrooms_input - median_bed_state) * 50000 * BEDROOM_WEIGHT
+bathroom_adjustment = (bathrooms_input - median_bath_state) * 30000 * BATHROOM_WEIGHT
 
-    # Adjustments
-    sqft_adjustment = (median_sqft_city - median_sqft_state) * SQFT_WEIGHT
-    bedroom_adjustment = (median_bed_city - median_bed_state) * 50000 * BEDROOM_WEIGHT  # each bed ~50k value baseline
-    bathroom_adjustment = (median_bath_city - median_bath_state) * 30000 * BATHROOM_WEIGHT  # each bath ~30k value baseline
+print(f"Sqft adjustment: ${sqft_adjustment:,.0f}")
+print(f"Bedroom adjustment: ${bedroom_adjustment:,.0f}")
+print(f"Bathroom adjustment: ${bathroom_adjustment:,.0f}")
 
-    print(f"Sqft adjustment: ${sqft_adjustment:,.0f}")
-    print(f"Bedroom adjustment: ${bedroom_adjustment:,.0f}")
-    print(f"Bathroom adjustment: ${bathroom_adjustment:,.0f}")
-
-else:
-    sqft_adjustment = 0
-    bedroom_adjustment = 0
-    bathroom_adjustment = 0
-
-# Example: simulate predicted base price from class
-predicted_base_price = (index + 1) * 100000  # simplistic mapping for clarity
+# Base price from class
+predicted_base_price = (index + 1) * 100000
 
 # Apply all adjustments before inflation
 adjusted_price_with_factors = (
@@ -118,7 +97,6 @@ adjusted_price_with_factors = (
     bathroom_adjustment
 )
 
-# Apply inflation adjustment
 adjusted_price_with_factors *= multiplier
 
 print(f"\nPredicted Base Price: ${predicted_base_price:,.0f}")
