@@ -112,5 +112,5 @@ adjusted_price_with_factors = (
 
 adjusted_price_with_factors *= multiplier
 
-print(f"\nPredicted Base Price: ${predicted_base_price:,.0f}")
+# print(f"\nPredicted Base Price: ${predicted_base_price:,.0f}")
 print(f"Adjusted Price (Location + Features + Inflation): ${adjusted_price_with_factors:,.0f}\n")
