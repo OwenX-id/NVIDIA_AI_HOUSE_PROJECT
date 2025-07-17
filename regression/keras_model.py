@@ -70,6 +70,7 @@ multiplier = inflation_multipliers.get(index, 1.50)  # default if out of mapping
 adjusted_price = (index + 1) * multiplier  # simple inflation estimate
 adjusted_index = min(int(adjusted_price) - 1, len(class_names) - 1)
 
+
 adjusted_class_name = class_names[adjusted_index]
 
 print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
