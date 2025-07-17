@@ -67,18 +67,25 @@ if not city_df.empty:
 else:
     location_adjustment = 0
     print(f"City '{city_input}' not found in dataset. No location adjustment applied.")
-
 # ADJUSTMENT CONTROL
-SQFT_WEIGHT = 0.5
-BEDROOM_WEIGHT = 0.25
-BATHROOM_WEIGHT = 0.25
+SQFT_WEIGHT = 1.0
+BEDROOM_WEIGHT = 1.0
+BATHROOM_WEIGHT = 1.0
 
 median_sqft_state = socal_df['sqft'].median()
 median_bed_state = socal_df['bed'].median()
 median_bath_state = socal_df['bath'].median()
 
+# Debug view of medians for clarity
+print(f"State median sqft: {median_sqft_state}, bed: {median_bed_state}, bath: {median_bath_state}")
+
+# Sqft: 1 USD per sqft delta
 sqft_adjustment = (sqft_input - median_sqft_state) * SQFT_WEIGHT
+
+# Bedroom: 50,000 USD per bedroom delta
 bedroom_adjustment = (bedrooms_input - median_bed_state) * 50000 * BEDROOM_WEIGHT
+
+# Bathroom: 30,000 USD per bathroom delta
 bathroom_adjustment = (bathrooms_input - median_bath_state) * 30000 * BATHROOM_WEIGHT
 
 print(f"Sqft adjustment: ${sqft_adjustment:,.0f}")
@@ -101,7 +108,3 @@ adjusted_price_with_factors *= multiplier
 
 print(f"\nPredicted Base Price: ${predicted_base_price:,.0f}")
 print(f"Adjusted Price (Location + Features + Inflation): ${adjusted_price_with_factors:,.0f}\n")
-
-print("Top Class:", class_name, "| Confidence Score:", confidence_score)
-print("Second Class:", second_class_name, "| Confidence Score:", second_confidence_score)
-print("Inflation-Adjusted Class:", adjusted_class_name)
