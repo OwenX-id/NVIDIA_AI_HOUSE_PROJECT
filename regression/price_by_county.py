@@ -32,7 +32,7 @@ zip_county_df['county'] = zip_county_df['county'].str.strip()
 zip_to_county = dict(zip(zip_county_df['zip'], zip_county_df['county']))
 
 # --- Step 3: Load your house price data ---
-houses_df = pd.read_csv("houses.csv")  # Replace with your CSV file path
+houses_df = pd.read_csv("socal2.csv")  # Replace with your CSV file path
 
 # Ensure zip_code is a 5-digit string
 houses_df['zip_code'] = houses_df['zip_code'].astype(str).str.zfill(5)
