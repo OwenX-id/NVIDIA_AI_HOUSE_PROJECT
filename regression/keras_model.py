@@ -16,8 +16,15 @@ class_names = open("labels.txt", "r").readlines()
 # determined by the first position in the shape tuple, in this case 1
 data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 
-# Replace this with the path to your image
-image = Image.open("/regression/test_image.png").convert("RGB")
+import sys
+if len(sys.argv) < 2:
+    print("Usage: python keras_model.py <image_path>")
+    sys.exit(1)
+
+image_path = sys.argv[1]
+
+# Open the provided image
+image = Image.open(image_path).convert("RGB")
 
 # resizing the image to be at least 224x224 and then cropping from the center
 size = (224, 224)
