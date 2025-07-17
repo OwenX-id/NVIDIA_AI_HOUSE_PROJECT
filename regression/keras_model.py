@@ -50,7 +50,7 @@ inflation_multiplier = 1.504  # 50.4% increase
 adjusted_index = min(int(index * inflation_multiplier), len(class_names) - 1)
 
 # Print prediction and confidence score with inflation-adjusted class
-print("Original Class:", class_name[2:], end="")
+# print("Original Class:", class_name[2:], end="")
 print(" Confidence Score:", confidence_score)
 
 adjusted_class_name = class_names[adjusted_index]
