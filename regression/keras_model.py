@@ -15,7 +15,7 @@ if len(sys.argv) < 6:
     sys.exit(1)
 
 image_path = sys.argv[1]
-city_input = sys.argv[2].strip().lower()
+city_input = sys.argv[2].strip()#.lower()
 bedrooms_input = float(sys.argv[3])
 bathrooms_input = float(sys.argv[4])
 sqft_input = float(sys.argv[5])
