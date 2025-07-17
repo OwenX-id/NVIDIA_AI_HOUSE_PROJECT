@@ -55,18 +55,24 @@ adjusted_class_name = class_names[adjusted_index].strip()
 
 # Load socal data
 socal_df = pd.read_csv("socal2.csv")
-socal_df['citi'] = socal_df['citi'].astype(str).str.strip().str.lower()
+# Preprocess 'citi' to extract city only
+socal_df['city_clean'] = socal_df['citi'].astype(str).str.extract(r'([^,]+)', expand=False).str.strip().str.lower()
 
-median_price_state = socal_df['price'].median()
-city_df = socal_df[socal_df['citi'] == city_input]
+city_input = sys.argv[2].strip().lower()
 
-if not city_df.empty:
-    median_price_city = city_df['price'].median()
+# Check if city is present in dataset
+if city_input in socal_df['city_clean'].values:
+    city_df = socal_df[socal_df['city_clean'] == city_input]
+    median_price_city = city_df['price'].astype(float).median()
+    median_price_state = socal_df['price'].astype(float).median()
     location_adjustment = median_price_city - median_price_state
-    print(f"Location adjustment for {city_input.title()}: ${location_adjustment:,.0f}")
+    print(f"Median price in {city_input.title()} county: ${median_price_city:,.0f}")
+    print(f"Median price in California: ${median_price_state:,.0f}")
+    print(f"Location Adjustment: ${location_adjustment:,.0f}")
 else:
-    location_adjustment = 0
     print(f"City '{city_input}' not found in dataset. No location adjustment applied.")
+    location_adjustment = 0
+
 # ADJUSTMENT CONTROL
 SQFT_WEIGHT = 1.0
 BEDROOM_WEIGHT = 1.0
