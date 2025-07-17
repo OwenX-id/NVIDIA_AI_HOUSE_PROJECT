@@ -3,7 +3,8 @@ from PIL import Image, ImageOps
 import numpy as np
 import pandas as pd
 import sys
-
+socal_df = pd.read_csv("socal2.csv")
+print(socal_df.columns)
 # ---------- CONFIG ----------
 
 model = load_model("keras_model.h5", compile=False)
