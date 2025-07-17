@@ -52,15 +52,26 @@ confidence_score = prediction[0][index]
 
 second_class_name = class_names[second_index]
 second_confidence_score = prediction[0][second_index]
+# Mapping from index to inflation multiplier
+inflation_multipliers = {
+    0: 1.60,  # 100-200k
+    1: 1.55,  # 200-300k
+    2: 1.52,  # 300-500k
+    3: 1.48,  # 500-750k
+    4: 1.45,  # 750k-1m
+    5: 1.40,  # 1m-1.25m
+    6: 1.35   # 1.25m+
+}
 
-# Adjust for California 6-year housing inflation
-inflation_multiplier = 1.504  # 50.4% increase
-adjusted_index = min(int(index * inflation_multiplier), len(class_names) - 1)
+# Retrieve appropriate multiplier for predicted class
+multiplier = inflation_multipliers.get(index, 1.50)  # default if out of mapping
 
-# Print results
-print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
-print("Second Class:", second_class_name[2:].strip(), "| Confidence Score:", second_confidence_score)
+# Estimate adjusted price class
+adjusted_price = (index + 1) * multiplier  # simple inflation estimate
+adjusted_index = min(int(adjusted_price) - 1, len(class_names) - 1)
 
 adjusted_class_name = class_names[adjusted_index]
-print("Inflation-Adjusted Class:", adjusted_class_name[2:].strip())
 
+print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
+print("Second Class:", second_class_name[2:].strip(), "| Confidence Score:", second_confidence_score)
+print("Inflation-Adjusted Class:", adjusted_class_name[2:].strip())
