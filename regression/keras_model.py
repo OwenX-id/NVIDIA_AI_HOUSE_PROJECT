@@ -41,18 +41,26 @@ data[0] = normalized_image_array
 
 # Predicts the model
 prediction = model.predict(data)
-index = np.argmax(prediction)
+# Get indices of sorted predictions (highest first)
+sorted_indices = np.argsort(prediction[0])[::-1]
+index = sorted_indices[0]
+second_index = sorted_indices[1]
+
+# Retrieve class names and confidence scores
 class_name = class_names[index]
 confidence_score = prediction[0][index]
+
+second_class_name = class_names[second_index]
+second_confidence_score = prediction[0][second_index]
 
 # Adjust for California 6-year housing inflation
 inflation_multiplier = 1.504  # 50.4% increase
 adjusted_index = min(int(index * inflation_multiplier), len(class_names) - 1)
 
-# Print prediction and confidence score with inflation-adjusted class
-# print("Original Class:", class_name[2:], end="")
-print(" Confidence Score:", confidence_score)
+# Print results
+print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
+print("Second Class:", second_class_name[2:].strip(), "| Confidence Score:", second_confidence_score)
 
 adjusted_class_name = class_names[adjusted_index]
-print("Inflation-Adjusted Class:", adjusted_class_name[2:])
+print("Inflation-Adjusted Class:", adjusted_class_name[2:].strip())
 
