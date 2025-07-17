@@ -74,7 +74,7 @@ else:
     location_adjustment = 0
 
 # ADJUSTMENT CONTROL
-SQFT_WEIGHT = 100
+SQFT_WEIGHT = 50
 BEDROOM_WEIGHT = 1.0
 BATHROOM_WEIGHT = 1.0
 
