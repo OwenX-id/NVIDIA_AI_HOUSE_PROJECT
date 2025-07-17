@@ -2,7 +2,6 @@ from keras.models import load_model  # TensorFlow is required for Keras to work
 from PIL import Image, ImageOps  # Install pillow instead of PIL
 import numpy as np
 import pandas as pd
-from uszipcode import SearchEngine
 
 # Disable scientific notation for clarity
 np.set_printoptions(suppress=True)
@@ -73,48 +72,17 @@ adjusted_price = (index + 1) * multiplier  # simple inflation estimate
 adjusted_index = min(int(adjusted_price) - 1, len(class_names) - 1)
 
 adjusted_class_name = class_names[adjusted_index]
+# Local CSV mapping
+zip_to_county_df = pd.read_csv("california-zip-codes.pdf", dtype=str)
+zip_to_county_df.columns = zip_to_county_df.columns.str.lower().str.strip()
 
-# ========== New block: Median price by zip code county ==========
+# Create a zip->county mapping dictionary
+zip_to_county_map = pd.Series(zip_to_county_df['county'].values, index=zip_to_county_df['zip']).to_dict()
 
-try:
-    # Load your CSV file with zip codes and prices
-    df = pd.read_csv("socal2.csv")
+def get_county(zip_code):
+    return zip_to_county_map.get(str(zip_code).zfill(5), None)
 
-    # Ensure columns are correctly named
-    df.columns = df.columns.str.lower().str.strip()
-    if 'zip_code' not in df.columns or 'price' not in df.columns:
-        print("CSV missing required 'zip_code' and 'price' columns.")
-    else:
-        # Initialize zip code search engine
-        search = SearchEngine(simple_zipcode=True)
-
-        # Map zip codes to counties
-        def get_county(zip_code):
-            zipcode_info = search.by_zipcode(str(int(zip_code)))
-            return zipcode_info.county if zipcode_info else None
-
-        # Add county column
-        df['county'] = df['zip_code'].apply(get_county)
-
-        # Drop rows without county
-        df = df.dropna(subset=['county'])
-
-        # Group by county and compute median price
-        median_prices = df.groupby('county')['price'].median().to_dict()
-
-        # Get county for the provided test zip code
-        test_zip_info = search.by_zipcode(str(int(zip_code_input)))
-        test_county = test_zip_info.county if test_zip_info else None
-
-        if test_county and test_county in median_prices:
-            print(f"Median price in {test_county} county: ${median_prices[test_county]:,.0f}")
-        else:
-            print(f"Could not find median price for county of zip code {zip_code_input}.")
-
-except Exception as e:
-    print(f"Error processing county median price: {e}")
-
-# ========== End new block ==========
+test_county = get_county(zip_code_input)
 
 # Print final predictions
 print("Top Class:", class_name[2:].strip(), "| Confidence Score:", confidence_score)
