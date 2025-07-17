@@ -1,40 +1,50 @@
+import tabula
 import pandas as pd
 
-# Load your Excel file with ZIP to County info
-zip_county_df = pd.read_excel("zip_county.xlsx")
+# --- Step 1: Extract ZIP-to-County table from your PDF ---
+pdf_path = "california-zip-codes.pdf"  # Replace with your PDF path
 
-# Take a quick look at the columns and some rows to verify
+# Extract all tables from all pages
+tables = tabula.read_pdf(pdf_path, pages='all', multiple_tables=True)
+
+# Combine all tables into one DataFrame (assuming table split across pages)
+zip_county_df = pd.concat(tables, ignore_index=True)
+
+# Preview the combined data
 print(zip_county_df.head())
 
-# Standardize column names to lowercase and strip spaces
+# --- Step 2: Clean ZIP-to-County DataFrame ---
+
+# Standardize column names (strip spaces, lowercase)
 zip_county_df.columns = zip_county_df.columns.str.strip().str.lower()
 
-# Sometimes columns may have spaces, e.g. 'code city county'
-# From your snippet, looks like columns: 'zip', 'code city', 'county'
-# You may want to rename for clarity, or just use 'zip' and 'county' columns:
+# You mentioned columns like 'zip', 'code city', 'county' — focus on 'zip' and 'county'
+# Some columns might be messy; ensure 'zip' and 'county' columns exist
+print(zip_county_df.columns)
 
-# If your zip codes are stored as integers, convert to strings with leading zeros if needed
+# Convert ZIP codes to 5-digit strings (pad zeros if needed)
 zip_county_df['zip'] = zip_county_df['zip'].astype(str).str.zfill(5)
 
-# Similarly clean county column (strip whitespace)
+# Strip whitespace in county names
 zip_county_df['county'] = zip_county_df['county'].str.strip()
 
-# Create a dictionary for fast lookup
+# Create mapping dictionary ZIP -> County
 zip_to_county = dict(zip(zip_county_df['zip'], zip_county_df['county']))
 
-# Now load your house prices CSV or DataFrame (example)
-houses_df = pd.read_csv("houses.csv")
+# --- Step 3: Load your house price data ---
+houses_df = pd.read_csv("houses.csv")  # Replace with your CSV file path
 
-# Convert zip_code in your houses data to string and pad zeros if necessary
+# Ensure zip_code is a 5-digit string
 houses_df['zip_code'] = houses_df['zip_code'].astype(str).str.zfill(5)
 
-# Map zip codes to counties using your loaded dictionary
+# Map ZIP codes to counties
 houses_df['county'] = houses_df['zip_code'].map(zip_to_county)
 
-# Drop houses with unknown counties if needed
+# Remove rows where county couldn't be mapped
 houses_df = houses_df.dropna(subset=['county'])
 
-# Calculate median house price per county
+# --- Step 4: Calculate median house price per county ---
 median_prices = houses_df.groupby('county')['price'].median().reset_index()
 
+print("Median house prices by county:")
 print(median_prices)
