@@ -2,6 +2,14 @@
 
 ## README
 
+# My Jetson-Based Project 🚀
+
+![Jetson](https://img.shields.io/badge/NVIDIA-Jetson-green?logo=nvidia)
+![NVIDIA](https://img.shields.io/badge/Powered_by-NVIDIA-green?logo=nvidia)
+
+This project runs on an NVIDIA Jetson Xavier using TensorRT for fast inference...
+
+
 # 🏠 House Price Estimation with Image + Data Adjustments
 
 This project predicts **house prices** by combining:
